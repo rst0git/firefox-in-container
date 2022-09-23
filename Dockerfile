@@ -1,15 +1,16 @@
-FROM ubuntu:14.04
+FROM ubuntu:22.04
 
-RUN apt-get update && apt-get install -y firefox
+ENV DEBIAN_FRONTEND=noninteractive
 
-# Replace 1000 with your user / group id
-RUN export uid=1000 gid=1000 && \
-    mkdir -p /home/developer && \
-    echo "developer:x:${uid}:${gid}:Developer,,,:/home/developer:/bin/bash" >> /etc/passwd && \
-    echo "developer:x:${uid}:" >> /etc/group && \
-    echo "developer ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/developer && \
-    chmod 0440 /etc/sudoers.d/developer && \
-    chown ${uid}:${gid} -R /home/developer
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y software-properties-common gnupg \
+    && add-apt-repository -y ppa:mozillateam/ppa \
+    && apt-get update \
+    && echo "Package: *\nPin: release o=LP-PPA-mozillateam\nPin-Priority: 1001\n\nPackage: firefox*Pin: release o=Ubuntu\nPin-Priority: -1\n" | tee /etc/apt/preferences.d/mozilla-firefox \
+    && apt-get install -t 'o=LP-PPA-mozillateam' -y firefox
+
+# Replace 1000 with your user id
+RUN useradd --create-home --uid 1000 developer
 
 USER developer
 ENV HOME /home/developer
